@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 智能家居控制面板</title>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- ECharts -->
+    <script src="https://unpkg.com/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: #e0e0e0;
+            --text-secondary: #8892b0;
+            --accent-blue: #64ffda;
+            --accent-purple: #bd93f9;
+            --accent-green: #50fa7b;
+            --accent-red: #ff5555;
+            --accent-orange: #ffb86c;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            -webkit-text-fill-color: var(--text-secondary);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-online {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .dot-offline {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+        }
+
+        /* 卡片网格 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        /* 温湿度显示 */
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .sensor-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .sensor-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .sensor-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        .sensor-temp {
+            color: var(--accent-orange);
+        }
+
+        .sensor-hum {
+            color: var(--accent-blue);
+        }
+
+        .sensor-unit {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .sensor-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* 开关控制 */
+        .switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 100px;
+            height: 54px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #2a2a4a;
+            transition: 0.3s;
+            border-radius: 54px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider:before {
+            content: "";
+            position: absolute;
+            height: 42px;
+            width: 42px;
+            left: 6px;
+            bottom: 6px;
+            background: #555;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(46px);
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .switch-status-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .switch-on {
+            color: var(--accent-green);
+        }
+
+        .switch-off {
+            color: var(--text-secondary);
+        }
+
+        .switch-last-event {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        /* 历史开关事件 */
+        .event-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-state {
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .event-on {
+            color: var(--accent-green);
+            background: rgba(80, 250, 123, 0.1);
+        }
+
+        .event-off {
+            color: var(--accent-red);
+            background: rgba(255, 85, 85, 0.1);
+        }
+
+        .event-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .event-source {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+
+            .header-title {
+                font-size: 20px;
+            }
+
+            .sensor-value {
+                font-size: 28px;
+            }
+
+            .grid {
+                gap: 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="app-container">
+        <!-- 头部 -->
+        <header class="header">
+            <div>
+                <div class="header-title">🏠 智能家居控制面板</div>
+                <div class="header-subtitle">ESP32 温湿度监测 & 远程开关系统</div>
+            </div>
+            <div class="header-status">
+                <div class="status-badge">
+                    <span class="status-dot" :class="deviceOnline ? 'dot-online' : 'dot-offline'"></span>
+                    {{ deviceOnline ? '设备在线' : '设备离线' }}
+                </div>
+                <div class="status-badge">
+                    <span class="status-dot" :class="mqttConnected ? 'dot-online' : 'dot-offline'"></span>
+                    {{ mqttConnected ? 'MQTT 已连接' : 'MQTT 断开' }}
+                </div>
+            </div>
+        </header>
+
+        <!-- 温湿度 + 开关控制 -->
+        <div class="grid">
+            <!-- 温湿度卡片 -->
+            <div class="card">
+                <div class="card-title">🌡️ 温湿度实时数据</div>
+                <div class="sensor-grid">
+                    <div class="sensor-card">
+                        <div class="sensor-icon">🌡️</div>
+                        <div class="sensor-value sensor-temp">
+                            {{ temperature.toFixed(1) }}
+                            <span class="sensor-unit">°C</span>
+                        </div>
+                        <div class="sensor-label">温度</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">💧</div>
+                        <div class="sensor-value sensor-hum">
+                            {{ humidity.toFixed(1) }}
+                            <span class="sensor-unit">%</span>
+                        </div>
+                        <div class="sensor-label">湿度</div>
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-secondary);">
+                    最后更新: {{ lastUpdateTime }}
+                </div>
+            </div>
+
+            <!-- 开关控制卡片 -->
+            <div class="card">
+                <div class="card-title">🔌 智能开关控制</div>
+                <div class="switch-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" v-model="switchState" @change="toggleSwitch">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="switch-status-text" :class="switchState ? 'switch-on' : 'switch-off'">
+                        {{ switchState ? '🟢 已开启' : '🔴 已关闭' }}
+                    </div>
+                    <div class="switch-last-event" v-if="lastSwitchTime">
+                        上次操作: {{ lastSwitchTime }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史数据图表 -->
+        <div class="grid">
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-title">📈 温湿度历史趋势</div>
+                <div id="chart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 开关历史 -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">📋 开关操作记录</div>
+                <div class="event-list">
+                    <div v-if="switchHistory.length === 0"
+                        style="text-align:center;color:var(--text-secondary);padding:20px;">
+                        暂无操作记录
+                    </div>
+                    <div v-for="event in switchHistory" :key="event.timestamp" class="event-item">
+                        <div>
+                            <span class="event-state" :class="event.state ? 'event-on' : 'event-off'">
+                                {{ event.state ? '开启' : '关闭' }}
+                            </span>
+                            <span class="event-source"> via {{ event.source }}</span>
+                        </div>
+                        <span class="event-time">{{ formatTime(event.timestamp) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📊 系统信息</div>
+                <div style="font-size:13px;line-height:2;">
+                    <div>🌐 后端服务: {{ backendUrl }}</div>
+                    <div>📡 MQTT Broker: g78ed510.ala.cn-hangzhou.emqxsl.cn</div>
+                    <div>💾 数据存储: SQLite</div>
+                    <div>🔗 WebSocket: {{ wsConnected ? '✅ 已连接' : '❌ 未连接' }}</div>
+                    <div style="margin-top:12px;border-top:1px solid var(--border-color);padding-top:8px;">
+                        本页面通过 WebSocket 实时接收数据更新
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, onBeforeUnmount, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                // ===== 响应式数据 =====
+                const temperature = ref(0);
+                const humidity = ref(0);
+                const switchState = ref(false);
+                const deviceOnline = ref(false);
+                const mqttConnected = ref(false);
+                const lastUpdateTime = ref('--');
+                const lastSwitchTime = ref('');
+                const switchHistory = ref([]);
+                const backendUrl = ref(window.location.origin);
+                const wsConnected = ref(false);
+
+                let ws = null;
+                let reconnectTimer = null;
+                let chart = null;
+
+                // ===== 后端 API 基础路径 =====
+                const API_BASE = window.location.origin;
+
+                // ===== 格式化时间 =====
+                function formatTime(isoStr) {
+                    if (!isoStr) return '--';
+                    const d = new Date(isoStr);
+                    const pad = n => String(n).padStart(2, '0');
+                    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                }
+
+                function formatDateTime(isoStr) {
+                    if (!isoStr) return '--';
+                    const d = new Date(isoStr);
+                    const pad = n => String(n).padStart(2, '0');
+                    return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                }
+
+                // ===== 初始化图表 =====
+                function initChart() {
+                    const el = document.getElementById('chart');
+                    if (!el) return;
+                    chart = echarts.init(el);
+                    chart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            backgroundColor: 'rgba(15,15,35,0.9)',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            textStyle: { color: '#e0e0e0' }
+                        },
+                        legend: {
+                            data: ['温度 (°C)', '湿度 (%)'],
+                            textStyle: { color: '#8892b0' }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                            axisLabel: { color: '#8892b0', fontSize: 11 }
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: '温度 (°C)',
+                                nameTextStyle: { color: '#8892b0' },
+                                axisLine: { show: false },
+                                axisLabel: { color: '#8892b0' },
+                                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+                            },
+                            {
+                                type: 'value',
+                                name: '湿度 (%)',
+                                nameTextStyle: { color: '#8892b0' },
+                                axisLine: { show: false },
+                                axisLabel: { color: '#8892b0' },
+                                splitLine: { show: false }
+                            }
+                        ],
+                        series: [
+                            {
+                                name: '温度 (°C)',
+                                type: 'line',
+                                smooth: true,
+                                symbol: 'none',
+                                lineStyle: { width: 2, color: '#ffb86c' },
+                                areaStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                        { offset: 0, color: 'rgba(255,184,108,0.3)' },
+                                        { offset: 1, color: 'rgba(255,184,108,0.01)' }
+                                    ])
+                                },
+                                data: []
+                            },
+                            {
+                                name: '湿度 (%)',
+                                type: 'line',
+                                smooth: true,
+                                symbol: 'none',
+                                lineStyle: { width: 2, color: '#64ffda' },
+                                areaStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                        { offset: 0, color: 'rgba(100,255,218,0.3)' },
+                                        { offset: 1, color: 'rgba(100,255,218,0.01)' }
+                                    ])
+                                },
+                                data: []
+                            }
+                        ]
+                    });
+
+                    // 窗口大小变化时自适应
+                    window.addEventListener('resize', () => { chart && chart.resize(); });
+                }
+
+                // ===== 更新图表数据 =====
+                function updateChart(historyData) {
+                    if (!chart) return;
+                    if (!historyData || historyData.length === 0) return;
+
+                    const times = historyData.map(d => formatDateTime(d.timestamp));
+                    const temps = historyData.map(d => d.temperature);
+                    const hums = historyData.map(d => d.humidity);
+
+                    chart.setOption({
+                        xAxis: { data: times },
+                        series: [
+                            { data: temps },
+                            { data: hums }
+                        ]
+                    });
+                }
+
+                // ===== 获取历史数据 =====
+                async function fetchHistory() {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/sensor/history?limit=50`);
+                        const data = await res.json();
+                        updateChart(data);
+                    } catch (e) {
+                        console.log('获取历史数据失败:', e);
+                    }
+                }
+
+                // ===== 获取开关历史 =====
+                async function fetchSwitchHistory() {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/switch/history?limit=10`);
+                        const data = await res.json();
+                        switchHistory.value = data.reverse();
+                    } catch (e) {
+                        console.log('获取开关历史失败:', e);
+                    }
+                }
+
+                // ===== 获取设备状态 =====
+                async function fetchStatus() {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/status`);
+                        const data = await res.json();
+                        temperature.value = data.temperature || 0;
+                        humidity.value = data.humidity || 0;
+                        switchState.value = data.switch_state;
+                        deviceOnline.value = data.device_online;
+                        mqttConnected.value = data.mqtt_connected;
+                        lastUpdateTime.value = data.last_update ? formatDateTime(data.last_update) : '--';
+                    } catch (e) {
+                        console.log('获取状态失败:', e);
+                    }
+                }
+
+                // ===== 切换开关 =====
+                async function toggleSwitch() {
+                    try {
+                        const res = await fetch(`${API_BASE}/api/switch`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ state: switchState.value })
+                        });
+                        const data = await res.json();
+                        switchState.value = data.state;
+                        lastSwitchTime.value = data.timestamp ? formatTime(data.timestamp) : '';
+                        fetchSwitchHistory();
+                    } catch (e) {
+                        console.log('切换开关失败:', e);
+                        // 恢复状态
+                        switchState.value = !switchState.value;
+                    }
+                }
+
+                // ===== WebSocket 连接 =====
+                function connectWebSocket() {
+                    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+
+                    try {
+                        ws = new WebSocket(wsUrl);
+
+                        ws.onopen = () => {
+                            wsConnected.value = true;
+                            console.log('✅ WebSocket 已连接');
+                        };
+
+                        ws.onmessage = (event) => {
+                            try {
+                                const data = JSON.parse(event.data);
+                                if (data.type === 'sensor_update') {
+                                    temperature.value = data.temperature || 0;
+                                    humidity.value = data.humidity || 0;
+                                    switchState.value = data.switch_state;
+                                    deviceOnline.value = data.device_online;
+                                    lastUpdateTime.value = data.timestamp ? formatDateTime(data.timestamp) : '--';
+                                }
+                            } catch (e) {
+                                console.log('WebSocket 数据解析失败:', e);
+                            }
+                        };
+
+                        ws.onclose = () => {
+                            wsConnected.value = false;
+                            console.log('🔴 WebSocket 已断开，5秒后重连...');
+                            reconnectTimer = setTimeout(connectWebSocket, 5000);
+                        };
+
+                        ws.onerror = (err) => {
+                            console.log('WebSocket 错误:', err);
+                            ws.close();
+                        };
+                    } catch (e) {
+                        console.log('WebSocket 连接失败:', e);
+                        reconnectTimer = setTimeout(connectWebSocket, 5000);
+                    }
+                }
+
+                // ===== 生命周期钩子 =====
+                onMounted(async () => {
+                    // 初始化
+                    initChart();
+                    await fetchStatus();
+                    await fetchHistory();
+                    await fetchSwitchHistory();
+
+                    // 定时轮询（作为 WebSocket 的补充）
+                    setInterval(fetchStatus, 10000);
+                    setInterval(fetchSwitchHistory, 15000);
+
+                    // 连接 WebSocket
+                    connectWebSocket();
+                });
+
+                onBeforeUnmount(() => {
+                    if (ws) {
+                        ws.close();
+                        ws = null;
+                    }
+                    if (reconnectTimer) {
+                        clearTimeout(reconnectTimer);
+                    }
+                    if (chart) {
+                        chart.dispose();
+                        chart = null;
+                    }
+                });
+
+                return {
+                    temperature,
+                    humidity,
+                    switchState,
+                    deviceOnline,
+                    mqttConnected,
+                    lastUpdateTime,
+                    lastSwitchTime,
+                    switchHistory,
+                    backendUrl,
+                    wsConnected,
+                    formatTime,
+                    toggleSwitch
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
