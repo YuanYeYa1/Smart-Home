@@ -95,11 +95,10 @@ smart-home/
 
 ## 🚀 后续优化方向
 
-- :contentReference[oaicite:0]{index=0}
-- :contentReference[oaicite:1]{index=1}
-- :contentReference[oaicite:2]{index=2}
-- :contentReference[oaicite:3]{index=3}
-- :contentReference[oaicite:4]{index=4}
+- ：接入 Home Assistant
+- : 支持多设备管理
+- : 用户登录系统
+- : ESP32 OTA 升级
 
 ---
 
