@@ -20,12 +20,12 @@ from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, 
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # ========== 配置 ==========
-MQTT_BROKER = "g78ed510.ala.cn-hangzhou.emqxsl.cn"  # 或您的 EMQX 服务器地址
+MQTT_BROKER = "YOUR_MQTT_BROKER_ADDRESS"  # 或您的 EMQX 服务器地址
 MQTT_PORT = 8883
 
 # MQTT 鉴权（EMQX 公有部署必须填写，需与 ESP32 配置一致）
-MQTT_USERNAME = "esp32"     # TODO: 请填写您的 EMQX 认证用户名
-MQTT_PASSWORD = "xyzworld"     # TODO: 请填写您的 EMQX 认证密码
+MQTT_USERNAME = "YOUR_MQTT_USERNAME"     # TODO: 请填写您的 EMQX 认证用户名
+MQTT_PASSWORD = "YOUR_MQTT_PASSWORD"     # TODO: 请填写您的 EMQX 认证密码
 
 MQTT_TOPIC_TEMP = "smart/home/temperature"
 MQTT_TOPIC_HUM = "smart/home/humidity"

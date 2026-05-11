@@ -3,19 +3,19 @@
 
 // ========== WiFi 配置 ==========
 // TODO: 修改为您的 WiFi 名称和密码
-const char* WIFI_SSID = "yuanye";
-const char* WIFI_PASSWORD = "xyzworld";
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // ========== MQTT 配置 ==========
 // EMQX 免费公有 MQTT Broker，也可以使用您自己的服务器
-const char* MQTT_BROKER = "g78ed510.ala.cn-hangzhou.emqxsl.cn";  // 或您的 EMQX 服务器地址
+const char* MQTT_BROKER = "YOUR_MQTT_BROKER_ADDRESS";  // 或您的 EMQX 服务器地址
 const int MQTT_PORT = 8883;
 // 基础 Client ID（setup 中会追加芯片唯一 ID）
 const char* MQTT_CLIENT_ID_BASE = "esp32_smart_home";
 
 // MQTT 鉴权（EMQX 公有部署必须填写）
-const char* MQTT_USERNAME = "esp32";     // TODO: 请填写您的 EMQX 认证用户名
-const char* MQTT_PASSWORD = "xyzworld";     // TODO: 请填写您的 EMQX 认证密码
+const char* MQTT_USERNAME = "YOUR_MQTT_USERNAME";     // TODO: 请填写您的 EMQX 认证用户名
+const char* MQTT_PASSWORD = "YOUR_MQTT_PASSWORD";     // TODO: 请填写您的 EMQX 认证密码
 
 // MQTT 主题（Topic）
 const char* MQTT_TOPIC_TEMP = "smart/home/temperature";      // 温度上报

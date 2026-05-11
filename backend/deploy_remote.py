@@ -10,9 +10,9 @@ import paramiko
 import time
 
 # ========== 配置 ==========
-SERVER_IP = "8.137.21.211"
-SERVER_USER = "root"
-SERVER_PASSWORD = "YuanYe0129"
+SERVER_IP = "YOUR_SERVER_IP"
+SERVER_USER = "YOUR_SERVER_USERNAME"
+SERVER_PASSWORD = "YOUR_SERVER_PASSWORD"
 REMOTE_DIR = "/root/smart-home/backend"
 LOCAL_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 

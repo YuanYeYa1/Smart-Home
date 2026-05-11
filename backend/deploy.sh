@@ -42,6 +42,6 @@ systemctl status smart-home-backend --no-pager || true
 echo ""
 echo "========================================"
 echo "✅ 部署完成！"
-echo "🌐 访问地址: http://8.137.21.211:8000"
-echo "📖 API 文档: http://8.137.21.211:8000/docs"
+echo "🌐 访问地址: http://YOUR_SERVER_IP:8000"
+echo "📖 API 文档: http://YOUR_SERVER_IP:8000/docs"
 echo "========================================"
